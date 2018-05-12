@@ -1,0 +1,47 @@
+{
+    variables: {
+        fdb_version: "5.1.7",
+        fdb_revision: "1",
+        repository: "jen20/foundationdb",
+    },
+	builders: [
+		{
+			type: "docker",
+			image: "ubuntu:18.04",
+			commit: true,
+
+			author: "james@jen20.com",
+
+			changes: [
+                "EXPOSE 4500",
+                "ENTRYPOINT /usr/local/bin/start-foundationdb.sh"
+			],
+		}
+	],
+	provisioners: [
+	    {
+	        type: "file",
+	        source: "files/",
+            destination: "/tmp",
+	    },
+        {
+			type: "shell",
+			start_retry_timeout: "1m",
+			script: "scripts/configure-packages.sh",
+			environment_vars: [
+			    "FOUNDATIONDB_VERSION={{ user `fdb_version` }}",
+			    "FOUNDATIONDB_REVISION={{ user `fdb_revision` }}",
+			],
+        }
+	],
+	"post-processors": [
+	    [
+            {
+                type: "docker-tag",
+                repository: "{{ user `repository` }}",
+                tag: "{{ user `fdb_version` }}",
+            },
+            "docker-push"
+        ],
+	]
+}
